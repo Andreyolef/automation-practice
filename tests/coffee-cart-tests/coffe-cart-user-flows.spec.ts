@@ -47,8 +47,8 @@ test("AO-2 Cart Counter and total price are update on added items", async ({
       total = total + priceNumber;
     }
     let totalOnPage = await page.locator('[data-test="checkout"]').innerText();
-    let totalOnPage2 = Number(totalOnPage.slice(8, 10));
-    return expect(total).toEqual(totalOnPage2);
+    let totalOnPageNumber = Number(totalOnPage.slice(8, 10));
+    return expect(total).toEqual(totalOnPageNumber);
   }
 
   //await espressoAddCup.click();
