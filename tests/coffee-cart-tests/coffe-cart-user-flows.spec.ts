@@ -1,4 +1,4 @@
-import { test, expect, Locator } from "@playwright/test";
+import { test, expect, Locator, Page } from "@playwright/test";
 
 const coffeeUrl = "https://coffee-cart.app/";
 
@@ -21,16 +21,44 @@ test("AO-1 Cart counter is updated on add and delete actions", async ({
   await expect(cartCounter).toContainText("(0)");
 });
 
-test("AO-2 Add items to the cart", async ({ page }) => {
+test("AO-2 Cart Counter and total price are update on added items", async ({
+  page,
+}) => {
   const cartCounter: Locator = page.locator('#app [aria-label="Cart page"]');
   const espressoAddCup: Locator = page.locator('[data-test="Espresso"]');
   const mochaAddCup: Locator = page.locator('[data-test="Mocha"]');
   const checkout: Locator = page.locator('[data-test="checkout"]');
 
-  await espressoAddCup.click();
-  await mochaAddCup.click();
-  await expect(cartCounter).toContainText("(2)");
-  await expect(checkout).toContainText("Total: $18.00");
+  function addCoffeeByName(coffeeName: String) {
+    return page.locator(`[data-test="${coffeeName}"]`).click();
+  }
+
+  async function checkCartCounter(itemsAddedToCart: String) {
+    return await expect(cartCounter).toContainText(`(${itemsAddedToCart})`);
+  }
+
+  async function checkTotalValue(coffeeNames: string[]) {
+    let total = 0;
+    for (let coffee of coffeeNames) {
+      let price = await page
+        .locator(`//h4 [text() = '${coffee} ']//small`)
+        .innerText();
+      let priceNumber = Number(price.slice(1, 3));
+      total = total + priceNumber;
+    }
+    let totalOnPage = await page.locator('[data-test="checkout"]').innerText();
+    let totalOnPage2 = Number(totalOnPage.slice(8, 10));
+    return expect(total).toEqual(totalOnPage2);
+  }
+
+  //await espressoAddCup.click();
+  await addCoffeeByName("Espresso");
+  //await mochaAddCup.click();
+  await addCoffeeByName("Mocha");
+  await addCoffeeByName("Americano");
+  await checkCartCounter("3");
+  //await expect(checkout).toContainText("Total: $18.00");
+  await checkTotalValue(["Espresso", "Mocha", "Americano"]);
 });
 
 test("AO-3 Delete items from cart page", async ({ page }) => {
