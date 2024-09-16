@@ -21,23 +21,40 @@ test("AO-1 Cart counter is updated on add and delete actions", async ({
   await expect(cartCounter).toContainText("(0)");
 });
 
-test("AO-2 Cart Counter and total price are update on added items", async ({
+test("AO-2 Total price is corretcly calculated", async ({
   page,
 }) => {
-  const cartCounter: Locator = page.locator('#app [aria-label="Cart page"]');
-  const espressoAddCup: Locator = page.locator('[data-test="Espresso"]');
-  const mochaAddCup: Locator = page.locator('[data-test="Mocha"]');
-  const checkout: Locator = page.locator('[data-test="checkout"]');
+  //const cartCounter: Locator = page.locator('#app [aria-label="Cart page"]');
+  //const checkout: Locator = page.locator('[data-test="checkout"]');
 
-  function addCoffeeByName(coffeeName: String) {
-    return page.locator(`[data-test="${coffeeName}"]`).click();
+  const coffeeList = {
+    espresso: "Espresso",
+    espressoMacchiato: "Espresso Macchiato",
+    cappucino: "Cappuccino",
+    mocha:"Mocha",
+    flatWhite: "Flat White",
+    americano: "Americano",
+    cafeLatte: "Cafe Latte",
+    espressoConPanna:"Espresso Con Panna",
+    cafeBreve: "Cafe Breve"
+}
+   
+let coffeesToOrder: string[] = [];
+
+  async function addCoffeeByNames(coffeeNames: string[]) {
+    coffeesToOrder = coffeeNames
+    for (let coffee of coffeeNames)
+      await page.locator(`[aria-label="${coffee}"]`).click();
+  }
+  
+  async function removeCoffeeByName(coffeeName: String) {
+    coffeesToOrder.splice((coffeesToOrder.indexOf(`${coffeeName}`)),1)
+    await page.locator('.pay-container').hover()
+    return page.locator(`[aria-label="Remove one ${coffeeName}"]`).click()
+
   }
 
-  async function checkCartCounter(itemsAddedToCart: String) {
-    return await expect(cartCounter).toContainText(`(${itemsAddedToCart})`);
-  }
-
-  async function checkTotalValue(coffeeNames: string[]) {
+  async function checkTotalPrice(coffeeNames: string[]) {
     let total = 0;
     for (let coffee of coffeeNames) {
       let price = await page
@@ -51,14 +68,10 @@ test("AO-2 Cart Counter and total price are update on added items", async ({
     return expect(total).toEqual(totalOnPageNumber);
   }
 
-  //await espressoAddCup.click();
-  await addCoffeeByName("Espresso");
-  //await mochaAddCup.click();
-  await addCoffeeByName("Mocha");
-  await addCoffeeByName("Americano");
-  await checkCartCounter("3");
-  //await expect(checkout).toContainText("Total: $18.00");
-  await checkTotalValue(["Espresso", "Mocha", "Americano"]);
+  
+  await addCoffeeByNames([coffeeList.americano,coffeeList.cappucino,coffeeList.espresso]);
+  await removeCoffeeByName(coffeeList.espresso);
+  await checkTotalPrice(coffeesToOrder);
 });
 
 test("AO-3 Delete items from cart page", async ({ page }) => {
